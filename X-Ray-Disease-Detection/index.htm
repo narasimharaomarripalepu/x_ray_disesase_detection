@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lung Disease Detection</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Left Side: Prediction Area -->
+        <div class="left">
+            <h2>Lung Disease Detection</h2>
+
+            <label for="imageInput" class="custom-file-upload">Choose an X-ray</label>
+            <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
+            
+            <div class="image-preview">
+                <img id="preview" src="" alt="X-ray Preview" style="display: none;">
+            </div>
+
+            <button onclick="uploadImage()">Upload & Predict</button>
+
+            <!-- Analysis Animation -->
+            <div class="analysis-animation" id="analysis">
+                <div class="circle"></div>
+                <p class="analysis-text">Analyzing X-ray...</p>
+            </div>
+
+            <p id="result"></p>
+        </div>
+
+        <!-- Vertical Divider -->
+        <div class="divider"></div>
+
+        <!-- Right Side: About Section -->
+        <div class="right">
+            <h2>About This Website</h2>
+            <p>This AI-powered application helps detect lung diseases using X-ray images. Upload an image, and our deep learning model will analyze it to identify conditions like Pneumonia, Tuberculosis, and more.</p>
+            <p>Our goal is to provide fast, accurate, and accessible lung disease detection to assist medical professionals.</p>
+            <p><strong>How It Works?</strong></p>
+            <ul>
+                <li>Upload an X-ray image</li>
+                <li>Click "Upload & Predict"</li>
+                <li>Receive instant AI-generated results</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            let input = event.target;
+            let reader = new FileReader();
+            
+            reader.onload = function () {
+                let preview = document.getElementById("preview");
+                preview.src = reader.result;
+                preview.style.display = "block";
+            };
+            
+            if (input.files && input.files[0]) {
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function uploadImage() {
+            let input = document.getElementById("imageInput").files[0];
+            if (!input) {
+                alert("Please select an image.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", input);
+
+            // Show the animation
+            document.getElementById("analysis").style.display = "flex";
+            let result_el=document.getElementById("result")
+            result_el.innerText = "";
+            result_el.style.color = ""; 
+
+
+            fetch("http://localhost:8080/predict", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                setTimeout(() => {
+                    document.getElementById("analysis").style.display = "none";
+                    document.getElementById("result").innerText = "You are suffring from " + data.disease;
+                    if(data.disease.toLowerCase() === "normal"){
+                        result_el.innerText="You are completely Normal"
+                        result_el.style.color = "#48c774";
+                    } 
+                    else {
+                        result_el.style.color = "#cb1d1d";
+                    }
+                }, 1000); // Animation duration before showing the result
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Prediction failed.");
+                document.getElementById("analysis").style.display = "none";
+            });
+        }
+    </script>
+</body>
+</html>
